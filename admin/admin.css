@@ -1,1 +1,354 @@
+/* ============ المتغيرات ============ */
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-tertiary: #1a1a2e;
+    --accent: #00f0ff;
+    --danger: #ff0055;
+    --success: #00ff88;
+    --warning: #ffaa00;
+    --text: #e0e0e0;
+    --text-muted: #888;
+    --border: #2a2a3a;
+}
 
+/* ============ إعدادات عامة ============ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* ============ شاشة تسجيل الدخول ============ */
+.login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 20px;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0f 100%);
+}
+
+.login-screen h1 {
+    font-size: 36px;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent);
+    margin-bottom: 20px;
+}
+
+.login-screen input {
+    padding: 15px 20px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 16px;
+    width: 300px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.login-screen input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.login-screen button {
+    padding: 12px 30px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.login-screen button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 240, 255, 0.5);
+}
+
+/* ============ اللوحة الرئيسية ============ */
+.main-panel {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: var(--bg-secondary);
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    font-size: 24px;
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
+}
+
+.stats {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 16px;
+}
+
+.stats b {
+    color: var(--danger);
+    font-size: 20px;
+}
+
+.online-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ============ شبكة اللوحة ============ */
+.panel-grid {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ============ قائمة الضحايا ============ */
+.victims-list {
+    width: 300px;
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+}
+
+.victims-list h2 {
+    color: var(--accent);
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+#victims-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.victim-card {
+    background: var(--bg-tertiary);
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.victim-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 240, 255, 0.2);
+}
+
+.victim-card.selected {
+    border-color: var(--danger);
+    background: #1a0a0a;
+    box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+}
+
+.victim-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+.victim-header strong {
+    font-size: 14px;
+}
+
+.victim-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 5px 0;
+}
+
+/* ============ منطقة التحكم ============ */
+.control-area {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+/* ============ لوحة الفيديو ============ */
+.video-panel {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+}
+
+.video-panel video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 0, 85, 0.8);
+    padding: 5px 15px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* ============ أزرار التحكم ============ */
+.control-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.control-buttons button {
+    padding: 15px;
+    background: var(--bg-tertiary);
+    color: var(--text);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.control-buttons button:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    box-shadow: 0 5px 20px rgba(0, 240, 255, 0.4);
+    transform: translateY(-3px);
+}
+
+/* ============ سجل البيانات ============ */
+.data-log {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.data-log h2 {
+    color: var(--success);
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+#stolen-data {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.data-entry {
+    background: var(--bg-tertiary);
+    padding: 15px;
+    border-radius: 8px;
+    border-right: 3px solid var(--danger);
+}
+
+.data-time {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.data-content {
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.screenshot-img {
+    max-width: 100%;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+/* ============ شريط التمرير ============ */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* ============ تصميم متجاوب ============ */
+@media (max-width: 768px) {
+    .panel-grid {
+        flex-direction: column;
+    }
+    
+    .victims-list {
+        width: 100%;
+        max-height: 200px;
+        border-left: none;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .control-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+      }
